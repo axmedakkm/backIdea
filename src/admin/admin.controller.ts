@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -125,6 +125,29 @@ export class AdminController {
     @CurrentUser() admin: AuthenticatedUser,
   ) {
     return this.adminService.setUserActive(id, dto.isActive, admin);
+  }
+
+  @Delete('users/:id')
+  @ApiMessage('User deleted successfully')
+  @ApiOperation({
+    summary: 'Delete a user',
+    description:
+      'Soft-deletes the account: the row is kept for referential integrity but the ' +
+      'email is tombstoned so the address can be reused, and any active session is revoked. ' +
+      'You cannot delete your own account, and administrator accounts cannot be deleted here.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'User ID' })
+  @ApiOkResponse({ description: 'User deleted', type: MessageOnlyEntity })
+  @ApiBadRequestResponse({
+    description: 'Attempted to delete your own account or an admin account',
+    type: ApiErrorResponse,
+  })
+  @ApiNotFoundResponse({ description: 'User not found', type: ApiErrorResponse })
+  deleteUser(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @CurrentUser() admin: AuthenticatedUser,
+  ) {
+    return this.adminService.deleteUser(id, admin);
   }
 
   @Get('agents')

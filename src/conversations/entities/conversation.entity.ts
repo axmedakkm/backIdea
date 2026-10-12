@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { MessageType } from '@prisma/client';
+import { MessageType, UserRole } from '@prisma/client';
 
 export class MessageSenderSummary {
   @ApiProperty({ format: 'uuid' })
@@ -59,6 +59,14 @@ export class ConversationParticipantEntity {
 
   @ApiPropertyOptional({ nullable: true })
   avatar!: string | null;
+
+  @ApiProperty({
+    enum: UserRole,
+    description:
+      'Lets clients tell an ADMIN participant (the moderation thread) apart from an ' +
+      'AGENT or USER one, since a conversation carries no other signal of its kind.',
+  })
+  role!: UserRole;
 
   @ApiPropertyOptional({ nullable: true, description: 'When this participant last read the thread' })
   lastReadAt!: Date | null;

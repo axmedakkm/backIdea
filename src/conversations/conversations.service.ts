@@ -19,7 +19,7 @@ import { ConversationEntity, MessageEntity } from './entities/conversation.entit
 
 const CONVERSATION_INCLUDE = {
   participants: {
-    include: { user: { select: { id: true, name: true, avatar: true } } },
+    include: { user: { select: { id: true, name: true, avatar: true, role: true } } },
   },
   property: {
     select: {
@@ -400,6 +400,7 @@ export class ConversationsService {
         userId: participant.userId,
         name: participant.user.name,
         avatar: participant.user.avatar,
+        role: participant.user.role,
         lastReadAt: participant.lastReadAt,
       })),
       property: property

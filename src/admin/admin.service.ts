@@ -247,6 +247,46 @@ export class AdminService {
     return { ...rest, agentId: agent?.id ?? null };
   }
 
+  /**
+   * Soft-deletes a user account. Mirrors UsersService#deleteMe (row is kept
+   * for referential integrity, email is tombstoned for reuse) but is gated
+   * by the same self/admin-account protections as setUserActive.
+   */
+  async deleteUser(id: string, admin: AuthenticatedUser): Promise<{ message: string }> {
+    const user = await this.prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true, role: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" was not found`);
+    }
+
+    if (user.id === admin.id) {
+      throw new BadRequestException('You cannot delete your own account');
+    }
+
+    if (user.role === UserRole.ADMIN) {
+      throw new BadRequestException('Administrator accounts cannot be deleted through this API');
+    }
+
+    await this.prisma.user.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        isActive: false,
+        hashedRefreshToken: null,
+        email: `deleted+${Date.now()}.${id}@deleted.local`,
+        passwordResetToken: null,
+        emailVerificationToken: null,
+      },
+    });
+
+    this.logger.log(`Admin ${admin.id} deleted user ${id}`);
+
+    return { message: 'User account deleted' };
+  }
+
   // -------------------------------------------------------------------------
   //  Property moderation
   // -------------------------------------------------------------------------
